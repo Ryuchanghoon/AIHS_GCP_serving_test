@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Processing App</title>
+</head>
+<body>
+    <h1>이미지 변환</h1>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/png, image/jpeg">
+        <select name="option">
+            <option value="None">변환 없음</option>
+            <option value="Histogram Equalization">히스토그램 평활화</option>
+            <option value="흑백변환">흑백 변환</option>
+            <option value="90도 회전">90도 회전</option>
+        </select>
+        <input type="submit" value="업로드 및 변환">
+    </form>
+</body>
+</html>
