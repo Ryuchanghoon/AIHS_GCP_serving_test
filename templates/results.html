@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Processing Results</title>
+</head>
+<body>
+    <h2>Processed Image</h2>
+    <img src="data:image/png;base64,{{ processed_image }}" alt="Processed Image">
+    
+    {% if histogram_image %}
+    <h2>Histogram</h2>
+    <img src="data:image/png;base64,{{ histogram_image }}" alt="Histogram">
+    {% else %}
+    <p>Histogram not available for this operation.</p>
+    {% endif %}
+</body>
+</html>

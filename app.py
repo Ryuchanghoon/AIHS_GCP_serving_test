@@ -1,10 +1,13 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, send_file, make_response
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from io import BytesIO
+import base64
+
 
 app = Flask(__name__)
+
 
 def process_image(image):
     ycrcb_image = cv2.cvtColor(image, cv2.COLOR_BGR2YCrCb)
@@ -25,21 +28,25 @@ def flip_image(image):
     rgb_flipped_image = cv2.cvtColor(flipped_image, cv2.COLOR_BGR2RGB)
     return rgb_flipped_image
 
-
 def plot_histograms(original_image, processed_image):
-    # 히스토그램 위한 YCrCb 분리.
     Y_original, Cr_original, Cb_original = cv2.split(cv2.cvtColor(original_image, cv2.COLOR_BGR2YCrCb))
     Y_processed, Cr_processed, Cb_processed = cv2.split(cv2.cvtColor(processed_image, cv2.COLOR_BGR2YCrCb))
-
     channels = ('Y', 'Cr', 'Cb')
-
     fig, axs = plt.subplots(2, 3, figsize=(16, 6))
-    
-    pass  
-
+    for i, channel in enumerate([Y_original, Cr_original, Cb_original]):
+        axs[0, i].hist(channel.ravel(), bins=256, range=[0, 256])
+        axs[0, i].set_title(f'Original {channels[i]}')
+    for i, channel in enumerate([Y_processed, Cr_processed, Cb_processed]):
+        axs[1, i].hist(channel.ravel(), bins=256, range=[0, 256])
+        axs[1, i].set_title(f'Processed {channels[i]}')
+    plt.tight_layout()
+    buf = BytesIO()
+    plt.savefig(buf, format='png')
+    plt.close(fig)
+    buf.seek(0)
+    return buf
 
 @app.route('/', methods=['GET', 'POST'])
-
 def index():
     if request.method == 'POST':
         uploaded_file = request.files['file']
@@ -53,18 +60,23 @@ def index():
 
             if option == 'Histogram Equalization':
                 processed_image = process_image(image)
+                histogram_image_buf = plot_histograms(image, processed_image)
                 _, img_encoded = cv2.imencode('.png', processed_image)
-                return send_file(BytesIO(img_encoded), download_name='processed.png', as_attachment=True)
+                processed_img_base64 = base64.b64encode(img_encoded).decode('utf-8')
+                histogram_img_base64 = base64.b64encode(histogram_image_buf.getvalue()).decode('utf-8')
+                return render_template('results.html', processed_image=processed_img_base64, histogram_image=histogram_img_base64)
 
             elif option == '흑백변환':
                 grayscale_image = convert_image_to_grayscale(image)
                 _, img_encoded = cv2.imencode('.png', grayscale_image)
-                return send_file(BytesIO(img_encoded), download_name='grayscale.png', as_attachment=True)
+                grayscale_img_base64 = base64.b64encode(img_encoded).decode('utf-8')
+                return render_template('results.html', processed_image=grayscale_img_base64, histogram_image='')
 
             elif option == '90도 회전':
                 flipped_image = flip_image(image)
                 _, img_encoded = cv2.imencode('.png', flipped_image)
-                return send_file(BytesIO(img_encoded), download_name='flipped.png', as_attachment=True)
+                flipped_img_base64 = base64.b64encode(img_encoded).decode('utf-8')
+                return render_template('results.html', processed_image=flipped_img_base64, histogram_image='')
 
     return render_template('index.html')
 
